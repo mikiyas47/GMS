@@ -57,7 +57,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Mount Routes per specification
+// Mount Routes per specification (with /api prefix)
 app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
@@ -71,6 +71,21 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/product-sales', salesRoutes);
 app.use('/api/reports', reportsRoutes);
+
+// Fallback mounts without /api prefix (ensures /auth/login works if client URL omitted /api)
+app.use('/public', publicRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', usersRoutes);
+app.use('/members', membersRoutes);
+app.use('/memberships', membershipsRoutes);
+app.use('/payments', paymentsRoutes);
+app.use('/trainers', trainersRoutes);
+app.use('/classes', classesRoutes);
+app.use('/sessions', sessionsRoutes);
+app.use('/attendance', attendanceRoutes);
+app.use('/products', productsRoutes);
+app.use('/product-sales', salesRoutes);
+app.use('/reports', reportsRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {

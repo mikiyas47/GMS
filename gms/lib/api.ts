@@ -3,7 +3,16 @@
  * Connects directly to backend API on http://localhost:5000/api
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+function getApiBaseUrl(): string {
+  let url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').trim();
+  url = url.replace(/\/+$/, '');
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+  return url;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface UserSession {
   id: string;
