@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand: #E8452C;
+    --brand-dark: #B5301C;
+    --ink: #111827;
+    --surface: #FFFFFF;
+    --muted: #F3F4F6;
+    --text: #1F2937;
+    --text-soft: #6B7280;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #DC2626;
+    --info: #2563EB;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+body {
+  background-color: var(--muted);
+  color: var(--text);
+  font-family: var(--font-inter, system-ui, -apple-system, sans-serif);
+}
+
+.heading-font {
+  font-family: var(--font-poppins, system-ui, -apple-system, sans-serif);
+}
+
+/* Animations */
+@keyframes bounceSubtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 2s infinite ease-in-out;
+}
+
+/* Glassmorphism effects */
+.glass-nav {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-card {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(232, 69, 44, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(232, 69, 44, 0.15);
+}
+
+.radial-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(232, 69, 44, 0.18) 0%, transparent 60%);
+}
+
+.radial-glow-center {
+  background: radial-gradient(circle at 50% 50%, rgba(232, 69, 44, 0.12) 0%, transparent 70%);
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
