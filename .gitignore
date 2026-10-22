@@ -10,10 +10,11 @@ gms/build/
 
 # Environment Variables
 .env
-.env*.local
-backend/.env
-gms/.env
-gms/.env*.local
+.env*
+*.env
+**/.env
+**/.env*
+!**/.env.example
 
 # Logs & Debug
 *.log

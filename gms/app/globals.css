@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-outfit), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 @layer base {
   :root {
     --brand: #E8452C;
@@ -13,6 +18,8 @@
     --warning: #F59E0B;
     --danger: #DC2626;
     --info: #2563EB;
+    --font-inter: var(--font-jakarta);
+    --font-poppins: var(--font-outfit);
   }
 }
 
@@ -35,11 +42,15 @@
 body {
   background-color: var(--muted);
   color: var(--text);
-  font-family: var(--font-inter, system-ui, -apple-system, sans-serif);
+  font-family: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .heading-font {
-  font-family: var(--font-poppins, system-ui, -apple-system, sans-serif);
+  font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 /* Animations */

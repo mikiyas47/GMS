@@ -197,9 +197,9 @@ export default function LandingPage() {
             : 'bg-transparent py-5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-6 xl:gap-10">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#B5301C] to-[#E8452C] flex items-center justify-center text-white shadow-lg shadow-[#E8452C]/30 group-hover:scale-105 transition-all">
               <Dumbbell className="w-6 h-6 -rotate-45" />
             </div>
@@ -214,48 +214,43 @@ export default function LandingPage() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex items-center gap-7">
-            <a href="#about" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-6">
+            <a href="#about" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               About
             </a>
-            <a href="#disciplines" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+            <a href="#disciplines" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               Disciplines
             </a>
-            <a href="#pricing" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider flex items-center gap-1">
+            <a href="#pricing" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider flex items-center gap-1.5">
               <span>Plans</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E8452C]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E8452C] shadow-sm shadow-[#E8452C]" />
             </a>
-            <a href="#timetable" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+            <a href="#timetable" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               Timetable
             </a>
-            <a href="#calculator" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+            <a href="#calculator" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               BMI Tool
             </a>
-            <a href="#equipment" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+            <a href="#equipment" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               Pro Shop
             </a>
-            <a href="#contact" className="text-xs font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-wider">
+            <a href="#contact" className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider">
               Contact
             </a>
           </div>
 
-          {/* Right Action: Status Pill & Staff Login */}
-          <div className="hidden md:flex items-center gap-3">
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Open Today • 05:30 - 23:00</span>
-            </div>
-
+          {/* Right Action: Staff Login & Join CTA */}
+          <div className="hidden md:flex items-center gap-4 shrink-0">
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold uppercase tracking-wider transition-all"
+              className="px-4.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold uppercase tracking-wider transition-all"
             >
               Staff Portal
             </Link>
 
             <a
               href="#pricing"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8452C] to-[#B5301C] text-white text-xs font-black uppercase tracking-wider hover:opacity-95 shadow-md shadow-[#E8452C]/25 transition-all hover:-translate-y-0.5"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E8452C] to-[#B5301C] text-white text-xs font-black uppercase tracking-wider hover:opacity-95 shadow-md shadow-[#E8452C]/25 transition-all hover:-translate-y-0.5"
             >
               Join Now
             </a>
@@ -273,25 +268,25 @@ export default function LandingPage() {
 
         {/* Mobile Fullscreen Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-[76px] bg-[#0D1117]/98 backdrop-blur-xl z-50 p-6 flex flex-col gap-5 border-t border-gray-800 animate-in fade-in">
+          <div className="lg:hidden fixed inset-0 top-[76px] bg-[#0D1117]/98 backdrop-blur-xl z-50 p-6 flex flex-col gap-2.5 border-t border-gray-800 animate-in fade-in overflow-y-auto">
             <a
               href="#about"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               About Titan
             </a>
             <a
               href="#disciplines"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               Training Disciplines
             </a>
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-[#E8452C] py-2 border-b border-gray-800/60 flex items-center justify-between"
+              className="text-base font-bold text-[#E8452C] px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40 flex items-center justify-between"
             >
               <span>Membership Plans (ETB)</span>
               <span className="text-xs bg-[#E8452C]/20 px-2 py-0.5 rounded font-mono">From 59 ETB</span>
@@ -299,28 +294,28 @@ export default function LandingPage() {
             <a
               href="#timetable"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               Weekly Schedule
             </a>
             <a
               href="#calculator"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               Interactive BMI Tool
             </a>
             <a
               href="#equipment"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               Pro Shop & Gear
             </a>
             <a
               href="#contact"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-bold text-gray-200 hover:text-[#E8452C] py-2 border-b border-gray-800/60"
+              className="text-base font-bold text-gray-200 hover:text-white px-3.5 py-3 rounded-xl hover:bg-white/5 transition-colors border-b border-gray-800/40"
             >
               Contact & Hours
             </a>
@@ -364,15 +359,28 @@ export default function LandingPage() {
 
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
           
-          {/* Top Pill Tag */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/15 text-xs font-bold text-gray-200 backdrop-blur-md mb-8 shadow-sm">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E8452C] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E8452C]" />
-            </span>
-            <span>PREMIER FITNESS & ATHLETIC COMMUNITY</span>
-            <span className="text-gray-500">•</span>
-            <span className="text-[#E8452C]">2019 E.C. SEASON</span>
+          {/* Top Status & Brand Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-8">
+            {/* Live Open Hours Status Pill - Moved from Header */}
+            <div className="inline-flex items-center gap-2.5 px-4.5 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold backdrop-blur-md shadow-lg shadow-emerald-950/40 hover:bg-emerald-500/15 transition-all">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+              </span>
+              <Clock className="w-4 h-4 text-emerald-400" />
+              <span className="tracking-wide">Open Today • 05:30 - 23:00</span>
+            </div>
+
+            {/* Tagline Pill */}
+            <div className="inline-flex items-center gap-2.5 px-4.5 py-2 rounded-full bg-white/10 border border-white/15 text-xs sm:text-sm font-bold text-gray-200 backdrop-blur-md shadow-sm">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E8452C] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E8452C]" />
+              </span>
+              <span className="tracking-wider">PREMIER FITNESS & ATHLETIC COMMUNITY</span>
+              <span className="text-gray-500">•</span>
+              <span className="text-[#E8452C]">2019 E.C. SEASON</span>
+            </div>
           </div>
 
           {/* Main Headline */}
