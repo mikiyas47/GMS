@@ -13,7 +13,8 @@ const paymentSchema = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: [0.01, 'Payment amount must be greater than zero']
     },
     method: {
         type: String,

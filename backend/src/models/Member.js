@@ -14,12 +14,16 @@ const memberSchema = new mongoose.Schema({
     phone: {
         type: String,
         required: true,
+        unique: true,
         trim: true
     },
     email: {
         type: String,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        unique: true,
+        sparse: true,
+        default: null
     },
     date_of_birth: {
         type: String

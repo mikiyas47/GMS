@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Trainer } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
+const { validateEthiopianPhone, validateEmail, validateName } = require('../utils/validators');
 
 router.use(authenticate, authorize(['admin']));
 
@@ -60,13 +61,48 @@ router.post('/', async (req, res, next) => {
             });
         }
 
+        const fnVal = validateName(first_name, 'First name', true);
+        if (!fnVal.isValid) return res.status(400).json({ success: false, message: fnVal.error });
+        const lnVal = validateName(last_name, 'Last name', true);
+        if (!lnVal.isValid) return res.status(400).json({ success: false, message: lnVal.error });
+
+        let normalizedPhone = null;
+        if (phone && phone.trim()) {
+            const phoneVal = validateEthiopianPhone(phone);
+            if (!phoneVal.isValid) return res.status(400).json({ success: false, message: phoneVal.error });
+            normalizedPhone = phoneVal.normalized;
+
+            const existingPhone = await Trainer.findOne({ phone: normalizedPhone });
+            if (existingPhone) {
+                return res.status(409).json({
+                    success: false,
+                    message: `A trainer with phone number '${normalizedPhone}' already exists.`
+                });
+            }
+        }
+
+        let cleanEmail = null;
+        if (email && email.trim()) {
+            const emailVal = validateEmail(email, false);
+            if (!emailVal.isValid) return res.status(400).json({ success: false, message: emailVal.error });
+            cleanEmail = emailVal.normalized;
+
+            const existingEmail = await Trainer.findOne({ email: cleanEmail });
+            if (existingEmail) {
+                return res.status(409).json({
+                    success: false,
+                    message: `A trainer with email '${cleanEmail}' already exists.`
+                });
+            }
+        }
+
         const trainer = await Trainer.create({
             first_name: first_name.trim(),
             last_name: last_name.trim(),
-            phone: phone || null,
-            email: email ? email.trim().toLowerCase() : null,
-            specialization: specialization || null,
-            certification: certification || null,
+            phone: normalizedPhone,
+            email: cleanEmail,
+            specialization: specialization ? specialization.trim() : null,
+            certification: certification ? certification.trim() : null,
             hire_date: hire_date || null,
             is_active
         });
@@ -109,13 +145,59 @@ router.put('/:id', async (req, res, next) => {
             is_active
         } = req.body;
 
-        if (first_name) trainer.first_name = first_name.trim();
-        if (last_name) trainer.last_name = last_name.trim();
-        if (phone !== undefined) trainer.phone = phone;
-        if (email !== undefined) trainer.email = email ? email.trim().toLowerCase() : null;
-        if (specialization !== undefined) trainer.specialization = specialization;
-        if (certification !== undefined) trainer.certification = certification;
-        if (hire_date !== undefined) trainer.hire_date = hire_date;
+        if (first_name !== undefined) {
+            const fnVal = validateName(first_name, 'First name', true);
+            if (!fnVal.isValid) return res.status(400).json({ success: false, message: fnVal.error });
+            trainer.first_name = first_name.trim();
+        }
+
+        if (last_name !== undefined) {
+            const lnVal = validateName(last_name, 'Last name', true);
+            if (!lnVal.isValid) return res.status(400).json({ success: false, message: lnVal.error });
+            trainer.last_name = last_name.trim();
+        }
+
+        if (phone !== undefined) {
+            if (phone && phone.trim()) {
+                const phoneVal = validateEthiopianPhone(phone);
+                if (!phoneVal.isValid) return res.status(400).json({ success: false, message: phoneVal.error });
+                const normalizedPhone = phoneVal.normalized;
+
+                const existingPhone = await Trainer.findOne({ phone: normalizedPhone, _id: { $ne: id } });
+                if (existingPhone) {
+                    return res.status(409).json({
+                        success: false,
+                        message: `Phone number '${normalizedPhone}' is already assigned to another trainer.`
+                    });
+                }
+                trainer.phone = normalizedPhone;
+            } else {
+                trainer.phone = null;
+            }
+        }
+
+        if (email !== undefined) {
+            if (email && email.trim()) {
+                const emailVal = validateEmail(email, false);
+                if (!emailVal.isValid) return res.status(400).json({ success: false, message: emailVal.error });
+                const cleanEmail = emailVal.normalized;
+
+                const existingEmail = await Trainer.findOne({ email: cleanEmail, _id: { $ne: id } });
+                if (existingEmail) {
+                    return res.status(409).json({
+                        success: false,
+                        message: `Email '${cleanEmail}' is already assigned to another trainer.`
+                    });
+                }
+                trainer.email = cleanEmail;
+            } else {
+                trainer.email = null;
+            }
+        }
+
+        if (specialization !== undefined) trainer.specialization = specialization ? specialization.trim() : null;
+        if (certification !== undefined) trainer.certification = certification ? certification.trim() : null;
+        if (hire_date !== undefined) trainer.hire_date = hire_date || null;
         if (is_active !== undefined) trainer.is_active = is_active;
 
         await trainer.save();

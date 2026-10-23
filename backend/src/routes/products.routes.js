@@ -74,10 +74,17 @@ router.post('/', authorize(['admin']), async (req, res, next) => {
             description = ''
         } = req.body;
 
-        if (!name || price === undefined) {
+        if (!name || !name.trim()) {
             return res.status(400).json({
                 success: false,
-                message: 'Product name and price are required.'
+                message: 'Product name is required.'
+            });
+        }
+
+        if (price === undefined || isNaN(Number(price)) || Number(price) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product price must be a valid non-negative number.'
             });
         }
 
@@ -151,10 +158,28 @@ router.put('/:id', authorize(['admin']), async (req, res, next) => {
             description
         } = req.body;
 
-        if (name !== undefined) target.name = name.trim();
-        if (price !== undefined) target.price = Number(price);
-        if (stock_qty !== undefined) target.stock_qty = parseInt(stock_qty, 10);
-        else if (stockQty !== undefined) target.stock_qty = parseInt(stockQty, 10);
+        if (name !== undefined) {
+            if (!name.trim()) {
+                return res.status(400).json({ success: false, message: 'Product name cannot be empty.' });
+            }
+            target.name = name.trim();
+        }
+
+        if (price !== undefined) {
+            if (isNaN(Number(price)) || Number(price) < 0) {
+                return res.status(400).json({ success: false, message: 'Price must be a valid non-negative number.' });
+            }
+            target.price = Number(price);
+        }
+
+        if (stock_qty !== undefined || stockQty !== undefined) {
+            const rawStock = stock_qty !== undefined ? stock_qty : stockQty;
+            const parsed = parseInt(rawStock, 10);
+            if (isNaN(parsed) || parsed < 0) {
+                return res.status(400).json({ success: false, message: 'Stock quantity cannot be negative.' });
+            }
+            target.stock_qty = parsed;
+        }
 
         if (reorder_level !== undefined) target.reorder_level = parseInt(reorder_level, 10);
         else if (reorderLevel !== undefined) target.reorder_level = parseInt(reorderLevel, 10);

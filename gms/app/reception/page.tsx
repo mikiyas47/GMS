@@ -47,12 +47,18 @@ import { EthiopianDatePicker } from '@/components/EthiopianDatePicker';
 import {
   toEthiopian,
   ethiopianToIso,
+  getTodayEthiopian,
   calculateEthiopianEndDate,
   formatEthDate,
   formatEthDateTime,
   formatEthPeriod,
-  getTodayEthiopian
 } from '@/lib/ethiopianCalendar';
+import {
+  validateEthiopianPhone,
+  validateEmail,
+  validateName,
+  formatEthiopianPhone
+} from '@/lib/validators';
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
@@ -200,6 +206,33 @@ export default function ReceptionistDashboard() {
   // Complete 3-Step Registration Wizard
   async function handleFinishWizard() {
     try {
+      const fnVal = validateName(wizardData.first_name, 'First Name', true);
+      if (!fnVal.isValid) {
+        showToast(fnVal.error || 'Invalid First Name', 'error');
+        setWizardStep(1);
+        return;
+      }
+      const lnVal = validateName(wizardData.last_name, 'Last Name', true);
+      if (!lnVal.isValid) {
+        showToast(lnVal.error || 'Invalid Last Name', 'error');
+        setWizardStep(1);
+        return;
+      }
+      const phoneVal = validateEthiopianPhone(wizardData.phone);
+      if (!phoneVal.isValid) {
+        showToast(phoneVal.error || 'Invalid Ethiopian phone number', 'error');
+        setWizardStep(1);
+        return;
+      }
+      if (wizardData.email && wizardData.email.trim()) {
+        const emailVal = validateEmail(wizardData.email, false);
+        if (!emailVal.isValid) {
+          showToast(emailVal.error || 'Invalid email address', 'error');
+          setWizardStep(1);
+          return;
+        }
+      }
+
       const expiry = calculateEthiopianEndDate(
         wizardData.eth_year || 2019,
         wizardData.eth_month || 2,
@@ -208,10 +241,10 @@ export default function ReceptionistDashboard() {
       );
       const endDate = expiry.isoString;
       const newMember = await api.createMember({
-        first_name: wizardData.first_name,
-        last_name: wizardData.last_name,
-        phone: wizardData.phone,
-        email: wizardData.email,
+        first_name: wizardData.first_name.trim(),
+        last_name: wizardData.last_name.trim(),
+        phone: phoneVal.normalized,
+        email: wizardData.email ? wizardData.email.trim().toLowerCase() : '',
         date_of_birth: wizardData.date_of_birth,
         gender: wizardData.gender,
         address: wizardData.address,
@@ -893,10 +926,30 @@ export default function ReceptionistDashboard() {
                     <div className="pt-4 flex justify-end">
                       <button
                         onClick={() => {
-                          if (!wizardData.first_name || !wizardData.last_name || !wizardData.phone) {
-                            showToast('Please provide first name, last name, and phone', 'error');
+                          const fnVal = validateName(wizardData.first_name, 'First Name', true);
+                          if (!fnVal.isValid) {
+                            showToast(fnVal.error || 'Invalid First Name', 'error');
                             return;
                           }
+                          const lnVal = validateName(wizardData.last_name, 'Last Name', true);
+                          if (!lnVal.isValid) {
+                            showToast(lnVal.error || 'Invalid Last Name', 'error');
+                            return;
+                          }
+                          const phoneVal = validateEthiopianPhone(wizardData.phone);
+                          if (!phoneVal.isValid) {
+                            showToast(phoneVal.error || 'Invalid Ethiopian phone number', 'error');
+                            return;
+                          }
+                          if (wizardData.email && wizardData.email.trim()) {
+                            const emailVal = validateEmail(wizardData.email, false);
+                            if (!emailVal.isValid) {
+                              showToast(emailVal.error || 'Invalid email address', 'error');
+                              return;
+                            }
+                          }
+                          // Normalize phone number to standard Ethiopian format
+                          setWizardData({ ...wizardData, phone: phoneVal.normalized });
                           setWizardStep(2);
                         }}
                         className="min-h-[44px] px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E8452C] to-[#C7331C] hover:opacity-95 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#E8452C]/25 hover:-translate-y-0.5 transition-all cursor-pointer"
@@ -1713,12 +1766,34 @@ export default function ReceptionistDashboard() {
             onSubmit={async (e) => {
               e.preventDefault();
               try {
+                const fnVal = validateName(editingMember.firstName, 'First Name', true);
+                if (!fnVal.isValid) {
+                  showToast(fnVal.error || 'Invalid First Name', 'error');
+                  return;
+                }
+                const lnVal = validateName(editingMember.lastName, 'Last Name', true);
+                if (!lnVal.isValid) {
+                  showToast(lnVal.error || 'Invalid Last Name', 'error');
+                  return;
+                }
+                const phoneVal = validateEthiopianPhone(editingMember.phone);
+                if (!phoneVal.isValid) {
+                  showToast(phoneVal.error || 'Invalid Ethiopian phone number', 'error');
+                  return;
+                }
+                if (editingMember.email && editingMember.email.trim()) {
+                  const emailVal = validateEmail(editingMember.email, false);
+                  if (!emailVal.isValid) {
+                    showToast(emailVal.error || 'Invalid email address', 'error');
+                    return;
+                  }
+                }
                 const memberId = editingMember.id || editingMember._id;
                 await api.updateMember(memberId, {
-                  first_name: editingMember.firstName,
-                  last_name: editingMember.lastName,
-                  phone: editingMember.phone,
-                  email: editingMember.email || '',
+                  first_name: editingMember.firstName.trim(),
+                  last_name: editingMember.lastName.trim(),
+                  phone: phoneVal.normalized,
+                  email: editingMember.email ? editingMember.email.trim().toLowerCase() : '',
                   gender: editingMember.gender || '',
                 });
                 showToast('Member details updated successfully!');

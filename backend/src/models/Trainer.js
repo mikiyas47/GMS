@@ -13,12 +13,17 @@ const trainerSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
+        trim: true,
+        unique: true,
+        sparse: true,
         default: null
     },
     email: {
         type: String,
         trim: true,
         lowercase: true,
+        unique: true,
+        sparse: true,
         default: null
     },
     specialization: {

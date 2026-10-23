@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const { User } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 
+const { validateEthiopianPhone, validateEmail, validateName, validatePassword } = require('../utils/validators');
+
 router.use(authenticate, authorize(['admin']));
 
 /**
@@ -22,6 +24,7 @@ router.get('/', async (req, res, next) => {
                 id: u._id,
                 fullName: u.full_name,
                 email: u.email,
+                phone: u.phone || null,
                 role: u.role,
                 isActive: u.is_active,
                 createdAt: u.created_at
@@ -39,15 +42,36 @@ router.get('/', async (req, res, next) => {
  */
 router.post('/', async (req, res, next) => {
     try {
-        const { full_name, email, password, role } = req.body;
+        const { full_name, email, phone, password, role } = req.body;
 
+        // 1. Validate required fields
         if (!full_name || !email || !password || !role) {
             return res.status(400).json({
                 success: false,
-                message: 'All fields are required: full_name, email, password, role.'
+                message: 'Full name, email, password, and role are required.'
             });
         }
 
+        // 2. Name validation
+        const nameVal = validateName(full_name, 'Full name', true);
+        if (!nameVal.isValid) {
+            return res.status(400).json({ success: false, message: nameVal.error });
+        }
+
+        // 3. Email validation
+        const emailVal = validateEmail(email, true);
+        if (!emailVal.isValid) {
+            return res.status(400).json({ success: false, message: emailVal.error });
+        }
+        const cleanEmail = emailVal.normalized;
+
+        // 4. Password strength validation
+        const passVal = validatePassword(password);
+        if (!passVal.isValid) {
+            return res.status(400).json({ success: false, message: passVal.error });
+        }
+
+        // 5. Role validation
         const validRoles = ['admin', 'receptionist'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({
@@ -56,18 +80,39 @@ router.post('/', async (req, res, next) => {
             });
         }
 
-        const existing = await User.findOne({ email: email.toLowerCase().trim() });
-        if (existing) {
+        // 6. Phone validation (Ethiopian phone code)
+        let normalizedPhone = null;
+        if (phone && phone.trim()) {
+            const phoneVal = validateEthiopianPhone(phone);
+            if (!phoneVal.isValid) {
+                return res.status(400).json({ success: false, message: phoneVal.error });
+            }
+            normalizedPhone = phoneVal.normalized;
+
+            // Check duplicate phone
+            const existingPhone = await User.findOne({ phone: normalizedPhone });
+            if (existingPhone) {
+                return res.status(409).json({
+                    success: false,
+                    message: `A staff account with phone number '${normalizedPhone}' already exists. No duplicate phone numbers allowed.`
+                });
+            }
+        }
+
+        // 7. Check duplicate email
+        const existingEmail = await User.findOne({ email: cleanEmail });
+        if (existingEmail) {
             return res.status(409).json({
                 success: false,
-                message: `A staff account with email '${email}' already exists.`
+                message: `A staff account with email '${cleanEmail}' already exists. No duplicate emails allowed.`
             });
         }
 
         const password_hash = await bcrypt.hash(password, 10);
         const user = await User.create({
             full_name: full_name.trim(),
-            email: email.toLowerCase().trim(),
+            email: cleanEmail,
+            phone: normalizedPhone,
             password_hash,
             role,
             is_active: true
@@ -80,6 +125,7 @@ router.post('/', async (req, res, next) => {
                 id: user._id,
                 fullName: user.full_name,
                 email: user.email,
+                phone: user.phone,
                 role: user.role,
                 isActive: user.is_active
             }
@@ -97,7 +143,7 @@ router.post('/', async (req, res, next) => {
 router.patch('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { full_name, email, role, is_active, password } = req.body;
+        const { full_name, email, phone, role, is_active, password } = req.body;
 
         const user = await User.findById(id);
         if (!user) {
@@ -114,10 +160,20 @@ router.patch('/:id', async (req, res, next) => {
             });
         }
 
-        if (full_name) user.full_name = full_name.trim();
+        if (full_name !== undefined) {
+            const nameVal = validateName(full_name, 'Full name', true);
+            if (!nameVal.isValid) {
+                return res.status(400).json({ success: false, message: nameVal.error });
+            }
+            user.full_name = full_name.trim();
+        }
 
-        if (email) {
-            const cleanEmail = email.toLowerCase().trim();
+        if (email !== undefined) {
+            const emailVal = validateEmail(email, true);
+            if (!emailVal.isValid) {
+                return res.status(400).json({ success: false, message: emailVal.error });
+            }
+            const cleanEmail = emailVal.normalized;
             const existing = await User.findOne({ email: cleanEmail, _id: { $ne: id } });
             if (existing) {
                 return res.status(409).json({
@@ -126,6 +182,26 @@ router.patch('/:id', async (req, res, next) => {
                 });
             }
             user.email = cleanEmail;
+        }
+
+        if (phone !== undefined) {
+            if (phone && phone.trim()) {
+                const phoneVal = validateEthiopianPhone(phone);
+                if (!phoneVal.isValid) {
+                    return res.status(400).json({ success: false, message: phoneVal.error });
+                }
+                const normalizedPhone = phoneVal.normalized;
+                const existingPhone = await User.findOne({ phone: normalizedPhone, _id: { $ne: id } });
+                if (existingPhone) {
+                    return res.status(409).json({
+                        success: false,
+                        message: `Phone number '${normalizedPhone}' is already used by another account.`
+                    });
+                }
+                user.phone = normalizedPhone;
+            } else {
+                user.phone = null;
+            }
         }
 
         if (role) {
@@ -143,6 +219,10 @@ router.patch('/:id', async (req, res, next) => {
         }
 
         if (password) {
+            const passVal = validatePassword(password);
+            if (!passVal.isValid) {
+                return res.status(400).json({ success: false, message: passVal.error });
+            }
             user.password_hash = await bcrypt.hash(password, 10);
         }
 
@@ -155,6 +235,7 @@ router.patch('/:id', async (req, res, next) => {
                 id: user._id,
                 fullName: user.full_name,
                 email: user.email,
+                phone: user.phone,
                 role: user.role,
                 isActive: user.is_active,
                 createdAt: user.created_at

@@ -8,15 +8,18 @@ const productSchema = new mongoose.Schema({
     },
     price: {
         type: Number,
-        required: true
+        required: true,
+        min: [0, 'Retail price cannot be negative']
     },
     stock_qty: {
         type: Number,
-        default: 0
+        default: 0,
+        min: [0, 'Stock quantity cannot be negative']
     },
     reorder_level: {
         type: Number,
-        default: 5
+        default: 5,
+        min: [0, 'Reorder level cannot be negative']
     },
     is_active: {
         type: Boolean,

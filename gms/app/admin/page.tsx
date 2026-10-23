@@ -58,6 +58,12 @@ import {
   formatEthDateTime,
   formatEthPeriod
 } from '@/lib/ethiopianCalendar';
+import {
+  validateEthiopianPhone,
+  validateEmail,
+  validateName,
+  validatePassword
+} from '@/lib/validators';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -154,6 +160,7 @@ export default function AdminDashboard() {
   const [staffForm, setStaffForm] = useState({
     full_name: '',
     email: '',
+    phone: '',
     password: '',
     role: 'receptionist'
   });
@@ -1741,7 +1748,10 @@ export default function AdminDashboard() {
                                 <span className="font-extrabold text-slate-900 text-xs">{u.fullName}</span>
                               </div>
                             </td>
-                            <td className="py-3.5 px-5 text-slate-600 font-mono text-xs">{u.email}</td>
+                            <td className="py-3.5 px-5 text-slate-600 font-mono text-xs">
+                              <div>{u.email}</div>
+                              {u.phone && <div className="text-[11px] text-slate-400 font-mono">{u.phone}</div>}
+                            </td>
                             <td className="py-3.5 px-5 capitalize">
                               <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
                                 {u.role}
@@ -2316,6 +2326,18 @@ export default function AdminDashboard() {
               showToast('Product name is required.', 'error');
               return;
             }
+            if (productForm.price === undefined || productForm.price === null || productForm.price < 0 || isNaN(productForm.price)) {
+              showToast('Product price cannot be negative.', 'error');
+              return;
+            }
+            if (productForm.stock_qty === undefined || productForm.stock_qty === null || productForm.stock_qty < 0 || isNaN(productForm.stock_qty)) {
+              showToast('Stock quantity cannot be negative.', 'error');
+              return;
+            }
+            if (productForm.reorder_level === undefined || productForm.reorder_level === null || productForm.reorder_level < 0 || isNaN(productForm.reorder_level)) {
+              showToast('Reorder level cannot be negative.', 'error');
+              return;
+            }
 
             try {
               if (isEditingProduct && productForm.id) {
@@ -2576,17 +2598,47 @@ export default function AdminDashboard() {
       <Modal isOpen={addStaffOpen} onClose={() => setAddStaffOpen(false)} title="Create Staff Account" maxWidth="max-w-md">
         <form onSubmit={async (e) => {
           e.preventDefault();
-          if (!staffForm.full_name.trim() || !staffForm.email.trim() || !staffForm.password) {
-            showToast('Please fill out all staff fields.', 'error');
+          const nameVal = validateName(staffForm.full_name, 'Full Name', true);
+          if (!nameVal.isValid) {
+            showToast(nameVal.error || 'Invalid full name', 'error');
             return;
           }
+
+          const emailVal = validateEmail(staffForm.email, true);
+          if (!emailVal.isValid) {
+            showToast(emailVal.error || 'Invalid email address', 'error');
+            return;
+          }
+
+          let normalizedPhone: string | null = null;
+          if (staffForm.phone && staffForm.phone.trim()) {
+            const phoneVal = validateEthiopianPhone(staffForm.phone);
+            if (!phoneVal.isValid) {
+              showToast(phoneVal.error || 'Invalid Ethiopian phone number', 'error');
+              return;
+            }
+            normalizedPhone = phoneVal.normalized;
+          }
+
+          const passVal = validatePassword(staffForm.password);
+          if (!passVal.isValid) {
+            showToast(passVal.error || 'Password must be at least 6 characters', 'error');
+            return;
+          }
+
           try {
-            await api.createStaffUser(staffForm);
+            await api.createStaffUser({
+              ...staffForm,
+              full_name: staffForm.full_name.trim(),
+              email: emailVal.normalized,
+              phone: normalizedPhone
+            });
             showToast('Staff account created successfully!');
             setAddStaffOpen(false);
             setStaffForm({
               full_name: '',
               email: '',
+              phone: '',
               password: '',
               role: 'receptionist'
             });
@@ -2623,6 +2675,22 @@ export default function AdminDashboard() {
                 required
                 value={staffForm.email}
                 onChange={e => setStaffForm({ ...staffForm, email: e.target.value })}
+                className="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl bg-slate-50/50 focus:bg-white text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#E8452C]/20 focus:border-[#E8452C] outline-none transition-all font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
+              Ethiopian Phone <span className="text-slate-400 font-normal">(Optional, +251 9... / 09... / 07...)</span>
+            </label>
+            <div className="relative">
+              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                placeholder="+251-9..."
+                type="tel"
+                value={staffForm.phone}
+                onChange={e => setStaffForm({ ...staffForm, phone: e.target.value })}
                 className="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl bg-slate-50/50 focus:bg-white text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#E8452C]/20 focus:border-[#E8452C] outline-none transition-all font-mono"
               />
             </div>

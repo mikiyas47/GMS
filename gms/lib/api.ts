@@ -18,6 +18,7 @@ export interface UserSession {
   id: string;
   fullName: string;
   email: string;
+  phone?: string | null;
   role: 'admin' | 'receptionist';
 }
 

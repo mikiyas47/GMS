@@ -83,6 +83,13 @@ router.post('/', authorize(['admin', 'receptionist']), async (req, res, next) =>
             });
         }
 
+        if (isNaN(Number(amount)) || Number(amount) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment amount must be a valid number greater than zero.'
+            });
+        }
+
         const validMethods = ['cash', 'card', 'mobile_money', 'bank_transfer'];
         if (!validMethods.includes(method)) {
             return res.status(400).json({

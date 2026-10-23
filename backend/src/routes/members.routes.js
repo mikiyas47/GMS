@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { Member, Membership, Payment, Attendance } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
+const {
+    validateEthiopianPhone,
+    validateEmail,
+    validateName,
+    validateDateOfBirth
+} = require('../utils/validators');
 
 router.use(authenticate);
 
@@ -95,6 +101,7 @@ router.post('/', authorize(['admin', 'receptionist']), async (req, res, next) =>
             status = 'active'
         } = req.body;
 
+        // 1. Required fields presence
         if (!first_name || !last_name || !phone) {
             return res.status(400).json({
                 success: false,
@@ -102,6 +109,79 @@ router.post('/', authorize(['admin', 'receptionist']), async (req, res, next) =>
             });
         }
 
+        // 2. Validate first & last names
+        const firstNameVal = validateName(first_name, 'First name', true);
+        if (!firstNameVal.isValid) {
+            return res.status(400).json({ success: false, message: firstNameVal.error });
+        }
+        const lastNameVal = validateName(last_name, 'Last name', true);
+        if (!lastNameVal.isValid) {
+            return res.status(400).json({ success: false, message: lastNameVal.error });
+        }
+
+        // 3. Validate Ethiopian phone format
+        const phoneVal = validateEthiopianPhone(phone);
+        if (!phoneVal.isValid) {
+            return res.status(400).json({ success: false, message: phoneVal.error });
+        }
+        const normalizedPhone = phoneVal.normalized;
+
+        // 4. Check duplicate phone number across members
+        const existingMemberByPhone = await Member.findOne({ phone: normalizedPhone });
+        if (existingMemberByPhone) {
+            return res.status(409).json({
+                success: false,
+                message: `A member with phone number '${normalizedPhone}' is already registered. Duplicate phone numbers are not permitted.`
+            });
+        }
+
+        // 5. Validate & check duplicate email (if provided)
+        let cleanEmail = null;
+        if (email && email.trim()) {
+            const emailVal = validateEmail(email, false);
+            if (!emailVal.isValid) {
+                return res.status(400).json({ success: false, message: emailVal.error });
+            }
+            cleanEmail = emailVal.normalized;
+
+            const existingMemberByEmail = await Member.findOne({ email: cleanEmail });
+            if (existingMemberByEmail) {
+                return res.status(409).json({
+                    success: false,
+                    message: `A member with email '${cleanEmail}' is already registered. Duplicate email addresses are not permitted.`
+                });
+            }
+        }
+
+        // 6. Validate Emergency Contact Phone (must be Ethiopian, and distinct from member phone)
+        let normalizedEmergPhone = null;
+        if (emergency_contact_phone && emergency_contact_phone.trim()) {
+            const emergVal = validateEthiopianPhone(emergency_contact_phone);
+            if (!emergVal.isValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Emergency contact: ${emergVal.error}`
+                });
+            }
+            normalizedEmergPhone = emergVal.normalized;
+
+            if (normalizedEmergPhone === normalizedPhone) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Emergency contact phone number cannot be the same as the member\'s own phone number.'
+                });
+            }
+        }
+
+        // 7. Validate Date of Birth
+        if (date_of_birth) {
+            const dobVal = validateDateOfBirth(date_of_birth);
+            if (!dobVal.isValid) {
+                return res.status(400).json({ success: false, message: dobVal.error });
+            }
+        }
+
+        // 8. Validate status
         const validStatuses = ['active', 'frozen', 'expired', 'cancelled'];
         if (status && !validStatuses.includes(status)) {
             return res.status(400).json({
@@ -113,14 +193,14 @@ router.post('/', authorize(['admin', 'receptionist']), async (req, res, next) =>
         const member = await Member.create({
             first_name: first_name.trim(),
             last_name: last_name.trim(),
-            phone: phone.trim(),
-            email: email ? email.trim().toLowerCase() : null,
+            phone: normalizedPhone,
+            email: cleanEmail,
             date_of_birth: date_of_birth || null,
             gender: gender || null,
-            address: address || null,
-            emergency_contact_name: emergency_contact_name || null,
-            emergency_contact_phone: emergency_contact_phone || null,
-            notes: notes || null,
+            address: address ? address.trim() : null,
+            emergency_contact_name: emergency_contact_name ? emergency_contact_name.trim() : null,
+            emergency_contact_phone: normalizedEmergPhone,
+            notes: notes ? notes.trim() : null,
             status,
             registered_by: req.user.id
         });
@@ -214,16 +294,110 @@ router.put('/:id', authorize(['admin', 'receptionist']), async (req, res, next) 
             status
         } = req.body;
 
-        if (first_name) member.first_name = first_name.trim();
-        if (last_name) member.last_name = last_name.trim();
-        if (phone) member.phone = phone.trim();
-        if (email !== undefined) member.email = email ? email.trim().toLowerCase() : null;
-        if (date_of_birth !== undefined) member.date_of_birth = date_of_birth;
-        if (gender !== undefined) member.gender = gender;
-        if (address !== undefined) member.address = address;
-        if (emergency_contact_name !== undefined) member.emergency_contact_name = emergency_contact_name;
-        if (emergency_contact_phone !== undefined) member.emergency_contact_phone = emergency_contact_phone;
-        if (notes !== undefined) member.notes = notes;
+        if (first_name !== undefined) {
+            const firstNameVal = validateName(first_name, 'First name', true);
+            if (!firstNameVal.isValid) {
+                return res.status(400).json({ success: false, message: firstNameVal.error });
+            }
+            member.first_name = first_name.trim();
+        }
+
+        if (last_name !== undefined) {
+            const lastNameVal = validateName(last_name, 'Last name', true);
+            if (!lastNameVal.isValid) {
+                return res.status(400).json({ success: false, message: lastNameVal.error });
+            }
+            member.last_name = last_name.trim();
+        }
+
+        if (phone !== undefined) {
+            const phoneVal = validateEthiopianPhone(phone);
+            if (!phoneVal.isValid) {
+                return res.status(400).json({ success: false, message: phoneVal.error });
+            }
+            const normalizedPhone = phoneVal.normalized;
+
+            const existingMemberByPhone = await Member.findOne({
+                phone: normalizedPhone,
+                _id: { $ne: id }
+            });
+
+            if (existingMemberByPhone) {
+                return res.status(409).json({
+                    success: false,
+                    message: `Phone number '${normalizedPhone}' is already in use by another member.`
+                });
+            }
+
+            member.phone = normalizedPhone;
+        }
+
+        if (email !== undefined) {
+            if (email && email.trim()) {
+                const emailVal = validateEmail(email, false);
+                if (!emailVal.isValid) {
+                    return res.status(400).json({ success: false, message: emailVal.error });
+                }
+                const cleanEmail = emailVal.normalized;
+
+                const existingMemberByEmail = await Member.findOne({
+                    email: cleanEmail,
+                    _id: { $ne: id }
+                });
+
+                if (existingMemberByEmail) {
+                    return res.status(409).json({
+                        success: false,
+                        message: `Email address '${cleanEmail}' is already in use by another member.`
+                    });
+                }
+                member.email = cleanEmail;
+            } else {
+                member.email = null;
+            }
+        }
+
+        if (date_of_birth !== undefined) {
+            if (date_of_birth) {
+                const dobVal = validateDateOfBirth(date_of_birth);
+                if (!dobVal.isValid) {
+                    return res.status(400).json({ success: false, message: dobVal.error });
+                }
+                member.date_of_birth = date_of_birth;
+            } else {
+                member.date_of_birth = null;
+            }
+        }
+
+        if (gender !== undefined) member.gender = gender || null;
+        if (address !== undefined) member.address = address ? address.trim() : null;
+        if (emergency_contact_name !== undefined) member.emergency_contact_name = emergency_contact_name ? emergency_contact_name.trim() : null;
+
+        if (emergency_contact_phone !== undefined) {
+            if (emergency_contact_phone && emergency_contact_phone.trim()) {
+                const emergVal = validateEthiopianPhone(emergency_contact_phone);
+                if (!emergVal.isValid) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Emergency contact: ${emergVal.error}`
+                    });
+                }
+                const normalizedEmerg = emergVal.normalized;
+
+                if (normalizedEmerg === member.phone) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Emergency contact phone number cannot be the same as the member\'s own phone number.'
+                    });
+                }
+                member.emergency_contact_phone = normalizedEmerg;
+            } else {
+                member.emergency_contact_phone = null;
+            }
+        }
+
+        if (notes !== undefined) member.notes = notes ? notes.trim() : null;
+
         if (status) {
             const validStatuses = ['active', 'frozen', 'expired', 'cancelled'];
             if (!validStatuses.includes(status)) {
