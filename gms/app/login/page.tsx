@@ -186,11 +186,24 @@ export default function LoginPage() {
     setIsHoveringShowcase(false);
   };
 
-  // 3D Glass Form Tilt States & Handlers
+  // Desktop check to completely disable 3D animations/transforms on mobile
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(typeof window !== 'undefined' && window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
+  // 3D Glass Form Tilt States & Handlers (Desktop Only)
   const [formTilt, setFormTilt] = useState({ x: 0, y: 0 });
   const [isHoveringForm, setIsHoveringForm] = useState(false);
 
   const handleFormMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDesktop) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -198,6 +211,7 @@ export default function LoginPage() {
   };
 
   const handleFormMouseLeave = () => {
+    if (!isDesktop) return;
     setFormTilt({ x: 0, y: 0 });
     setIsHoveringForm(false);
   };
@@ -478,33 +492,37 @@ export default function LoginPage() {
         {/* ============================================================== */}
         {/* RIGHT COLUMN: 3D FROSTED GLASS LOGIN CARD (5 Cols on desktop) */}
         {/* ============================================================== */}
-        <div className="w-full max-w-md mx-auto lg:max-w-none lg:col-span-5 flex flex-col justify-center relative perspective-1200 preserve-3d my-auto">
+        <div className="w-full max-w-md mx-auto lg:max-w-none lg:col-span-5 flex flex-col justify-center relative lg:perspective-1200 lg:preserve-3d my-auto">
           
           {/* Glowing Ambient 3D Light Spheres (behind the glass) */}
           <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-gradient-to-tr from-[#E8452C] to-[#FF6B4A] opacity-40 blur-3xl pointer-events-none animate-pulse" />
           <div className="absolute -bottom-10 -left-10 w-44 h-44 rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 opacity-30 blur-3xl pointer-events-none animate-pulse-slow" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-[#E8452C]/10 blur-[100px] pointer-events-none" />
 
-          {/* 3D Glass Card Container */}
+          {/* 3D Glass Card Container (3D tilt active on desktop only, static on mobile) */}
           <div
             onMouseMove={handleFormMouseMove}
-            onMouseEnter={() => setIsHoveringForm(true)}
+            onMouseEnter={() => { if (isDesktop) setIsHoveringForm(true); }}
             onMouseLeave={handleFormMouseLeave}
             style={{
-              transform: `perspective(1200px) rotateX(${formTilt.y * -14}deg) rotateY(${formTilt.x * 14}deg) translateZ(${isHoveringForm ? 18 : 0}px) scale(${isHoveringForm ? 1.015 : 1})`,
-              transition: isHoveringForm ? 'transform 0.12s ease-out' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+              transform: isDesktop 
+                ? `perspective(1200px) rotateX(${formTilt.y * -14}deg) rotateY(${formTilt.x * 14}deg) translateZ(${isHoveringForm ? 18 : 0}px) scale(${isHoveringForm ? 1.015 : 1})`
+                : 'none',
+              transition: isDesktop 
+                ? (isHoveringForm ? 'transform 0.12s ease-out' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)')
+                : 'none',
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 45%, rgba(10, 13, 20, 0.85) 100%)',
               backdropFilter: 'blur(30px) saturate(190%)',
               WebkitBackdropFilter: 'blur(30px) saturate(190%)',
-              boxShadow: isHoveringForm
+              boxShadow: isDesktop && isHoveringForm
                 ? '0 35px 70px -15px rgba(0, 0, 0, 0.9), 0 0 50px -5px rgba(232, 69, 44, 0.35), inset 0 1px 2px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 2px 0 rgba(0, 0, 0, 0.6)'
                 : '0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 35px -8px rgba(232, 69, 44, 0.2), inset 0 1px 2px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 2px 0 rgba(0, 0, 0, 0.5)',
             }}
-            className="relative rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl preserve-3d select-none group"
+            className="relative rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl lg:preserve-3d group"
           >
-            {/* Dynamic Specular Light Glare (Glass Surface Reflection) */}
+            {/* Dynamic Specular Light Glare (Glass Surface Reflection - Desktop only) */}
             <div 
-              className="absolute inset-0 rounded-3xl pointer-events-none mix-blend-overlay transition-opacity duration-300"
+              className="hidden lg:block absolute inset-0 rounded-3xl pointer-events-none mix-blend-overlay transition-opacity duration-300"
               style={{
                 background: `radial-gradient(circle at ${(formTilt.x + 0.5) * 100}% ${(formTilt.y + 0.5) * 100}%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.06) 35%, transparent 65%)`,
                 opacity: isHoveringForm ? 1 : 0.45
@@ -514,8 +532,8 @@ export default function LoginPage() {
             {/* Subtle Inner Glass Grid / Frost texture */}
             <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-60" />
 
-            {/* Card Header (translateZ(45px) for 3D holographic projection) */}
-            <div style={{ transform: 'translateZ(45px)' }} className="mb-6 preserve-3d relative">
+            {/* Card Header (translateZ(45px) on desktop) */}
+            <div style={{ transform: isDesktop ? 'translateZ(45px)' : 'none' }} className="mb-6 lg:preserve-3d relative">
               <div className="flex items-center justify-between mb-3.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
@@ -544,10 +562,10 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Error Notification Banner (translateZ(35px)) */}
+            {/* Error Notification Banner (translateZ(35px) on desktop) */}
             {error && (
               <div 
-                style={{ transform: 'translateZ(35px)' }}
+                style={{ transform: isDesktop ? 'translateZ(35px)' : 'none' }}
                 className="mb-5 p-3.5 rounded-2xl bg-rose-500/20 backdrop-blur-md border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2.5 animate-shake shadow-lg shadow-rose-950/40"
               >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
@@ -555,14 +573,14 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Login Form (translateZ(30px)) */}
-            <form onSubmit={handleSubmit} style={{ transform: 'translateZ(30px)' }} className="space-y-4 preserve-3d">
+            {/* Login Form (translateZ(30px) on desktop) */}
+            <form onSubmit={handleSubmit} style={{ transform: isDesktop ? 'translateZ(30px)' : 'none' }} className="space-y-4 lg:preserve-3d relative z-10">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                   Staff Email Address
                 </label>
                 <div className="relative group/input">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-[#FF6B4A] transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-[#FF6B4A] transition-colors z-20">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
@@ -571,7 +589,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@gym.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] focus:bg-white/[0.1] border border-white/15 focus:border-[#E8452C] focus:ring-4 focus:ring-[#E8452C]/20 text-white placeholder-slate-400 text-xs sm:text-sm outline-none transition-all font-mono backdrop-blur-md shadow-inner"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] focus:bg-white/[0.1] border border-white/15 focus:border-[#E8452C] focus:ring-4 focus:ring-[#E8452C]/20 text-white placeholder-slate-400 text-xs sm:text-sm outline-none transition-all font-mono backdrop-blur-md shadow-inner relative z-10 select-text cursor-text"
                   />
                 </div>
               </div>
@@ -586,7 +604,7 @@ export default function LoginPage() {
                   </span>
                 </div>
                 <div className="relative group/input">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-[#FF6B4A] transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-[#FF6B4A] transition-colors z-20">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -595,12 +613,12 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] focus:bg-white/[0.1] border border-white/15 focus:border-[#E8452C] focus:ring-4 focus:ring-[#E8452C]/20 text-white placeholder-slate-400 text-xs sm:text-sm outline-none transition-all font-mono backdrop-blur-md shadow-inner"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] focus:bg-white/[0.1] border border-white/15 focus:border-[#E8452C] focus:ring-4 focus:ring-[#E8452C]/20 text-white placeholder-slate-400 text-xs sm:text-sm outline-none transition-all font-mono backdrop-blur-md shadow-inner relative z-10 select-text cursor-text"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer z-20"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -608,8 +626,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* 3D Tactile Submit Button (translateZ(50px)) */}
-              <div style={{ transform: 'translateZ(50px)' }} className="pt-2">
+              {/* 3D Tactile Submit Button (translateZ(50px) on desktop) */}
+              <div style={{ transform: isDesktop ? 'translateZ(50px)' : 'none' }} className="pt-2">
                 <button
                   type="submit"
                   disabled={loading}
@@ -627,8 +645,8 @@ export default function LoginPage() {
               </div>
             </form>
 
-            {/* Card Footer Navigation & Info (translateZ(25px)) */}
-            <div style={{ transform: 'translateZ(25px)' }} className="mt-6 pt-5 border-t border-white/10 text-center space-y-3">
+            {/* Card Footer Navigation & Info (translateZ(25px) on desktop) */}
+            <div style={{ transform: isDesktop ? 'translateZ(25px)' : 'none' }} className="mt-6 pt-5 border-t border-white/10 text-center space-y-3">
               <Link
                 href="/"
                 className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/25 py-2.5 px-4 rounded-2xl transition-all shadow-md shadow-black/20 w-full group backdrop-blur-md"
